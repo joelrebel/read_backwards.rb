@@ -8,7 +8,7 @@ class File
   end
   
   def split_chunk(chunk, delimiter, is_last_chunk)
-  	str_buf = chunk.split("\n")
+  	str_buf = chunk.split(delimiter)
   	if $str_half.nil? 
   		 $str_half = str_buf.first
   	else
