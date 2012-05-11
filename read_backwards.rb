@@ -7,12 +7,12 @@ class File
       return buf
   end
   
-  def split_chunk(chunk, is_last_chunk)
+  def split_chunk(chunk, delimiter, is_last_chunk)
   	str_buf = chunk.split("\n")
   	if $str_half.nil? 
   		 $str_half = str_buf.first
   	else
-  		if chunk =~ /\n$/ # incase we have a chunk that ends up being a complete line
+  		if chunk =~ /#{delimiter}$/ # incase we have a chunk that ends up being a complete line
   			str_buf.push($str_half)
   		else
   			str_buf[-1] = str_buf[-1].concat($str_half)
@@ -25,9 +25,8 @@ class File
   	str_buf.reverse
   end
   
-  def read_backwards
+  def read_backwards(chunksz=1024, delimiter="\n")
   fsize = self.lstat.size
-  chunksz=2048
   if fsize <= chunksz
   	fpos = 0
   	chunksz = fsize
@@ -43,7 +42,7 @@ class File
   loop {
   	count += 1
   	chunk = read_chunk(chunksz, fpos, self, is_lastchunk)
-  	lines = split_chunk(chunk, is_lastchunk)
+  	lines = split_chunk(chunk, delimiter, is_lastchunk)
   	#puts lines.inspect
   	lines.each{ |line|
   		yield line
