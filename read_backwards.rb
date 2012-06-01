@@ -7,22 +7,22 @@ class File
       return buf
   end
   
-  def split_chunk(chunk, delimiter, is_last_chunk)
+  def split_chunk(chunk, delimiter, is_last_chunk, str_half)
   	str_buf = chunk.split(delimiter)
-  	if $str_half.nil? 
-  		 $str_half = str_buf.first
+  	if str_half.nil? 
+  		 str_half = str_buf.first
   	else
-  		if chunk =~ /#{delimiter}$/ # incase we have a chunk that ends up being a complete line
-  			str_buf.push($str_half)
+  		if chunk[-1..-1] == "\n"
+  			str_buf.push(str_half)
   		else
-  			str_buf[-1] = str_buf[-1].concat($str_half)
+  			str_buf[-1] = str_buf[-1].concat(str_half)
   		end	
-  		$str_half = str_buf.first
+  		str_half = str_buf.first
   	end
   	if ! is_last_chunk
   		str_buf.delete_at(0)
   	end	
-  	str_buf.reverse
+  	[str_buf.reverse, str_half]
   end
   
   def read_backwards(chunksz=1024, delimiter="\n")
@@ -38,18 +38,21 @@ class File
   
   lines=Array.new
   count = 0
+
+  str_half = nil
   
   loop {
   	count += 1
   	chunk = read_chunk(chunksz, fpos, self, is_lastchunk)
-  	lines = split_chunk(chunk, delimiter, is_lastchunk)
+
+  	lines, str_half = split_chunk(chunk, delimiter, is_lastchunk, str_half)
   	#puts lines.inspect
   	lines.each{ |line|
   		yield line
   	}	
   	#puts '-------------X'
   
-  	#puts '1 - chunk ->' + count.to_s + ' fpos->' + fpos.to_s +   'nextpos-> ' + (fpos-chunksz).to_s + 'chunksz->' + chunksz.to_s
+ # 	$stdout << "\n" + '1 - chunk ->' + count.to_s + ' fpos->' + fpos.to_s +   'nextpos-> ' + (fpos-chunksz).to_s + 'chunksz->' + chunksz.to_s
   	if fpos <= chunksz*2
   		chunksz = fpos
   		fpos = 0
@@ -58,7 +61,7 @@ class File
   		fpos = fpos - chunksz
   	end
   
-  	#puts '2 - chunk ->' + count.to_s + ' fpos->' + fpos.to_s +   'nextpos-> ' + (fpos-chunksz).to_s + 'chunksz->' + chunksz.to_s
+#	$stdout << "\n" + '2 - chunk ->' + count.to_s + ' fpos->' + fpos.to_s +   'nextpos-> ' + (fpos-chunksz).to_s + 'chunksz->' + chunksz.to_s
   	break if ((fpos && (fpos-chunksz)) == 0 )
   }
   end
